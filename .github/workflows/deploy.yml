@@ -1,0 +1,126 @@
+name: Deploy Insecure API Demo
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '20.x'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd ${{ github.workspace }}
+          npm ci --production
+
+      - name: Package Lambda function
+        run: |
+          cd ${{ github.workspace }}
+          zip -r lambda.zip src/ package.json package-lock.json node_modules/
+          ls -lh lambda.zip
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Verify AWS credentials
+        run: |
+          aws sts get-caller-identity
+          echo "AWS credentials configured successfully"
+
+      - name: Update Lambda function code
+        run: |
+          FUNCTION_NAME="${{ secrets.LAMBDA_FUNCTION_NAME }}"
+
+          echo "Updating Lambda function: $FUNCTION_NAME"
+
+          aws lambda update-function-code \
+            --function-name $FUNCTION_NAME \
+            --zip-file fileb://lambda.zip \
+            --region ${{ env.AWS_REGION }}
+
+          echo "Waiting for Lambda function update to complete..."
+          aws lambda wait function-updated \
+            --function-name $FUNCTION_NAME \
+            --region ${{ env.AWS_REGION }}
+
+          echo "Lambda function updated successfully"
+
+      - name: Deploy frontend to S3
+        run: |
+          S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+
+          echo "Deploying frontend to S3 bucket: $S3_BUCKET"
+
+          aws s3 cp public/index.html s3://$S3_BUCKET/index.html \
+            --content-type "text/html" \
+            --region ${{ env.AWS_REGION }}
+
+          echo "Frontend deployed successfully"
+
+      - name: Get API Gateway URL
+        id: api_url
+        run: |
+          API_ID="${{ secrets.API_GATEWAY_ID }}"
+          STAGE_NAME="${{ secrets.STAGE_NAME || 'dev' }}"
+
+          API_URL="https://${API_ID}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${STAGE_NAME}"
+
+          echo "API Gateway URL: $API_URL"
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+
+      - name: Get S3 Website URL
+        id: s3_url
+        run: |
+          S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+
+          S3_URL="http://${S3_BUCKET}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+
+          echo "S3 Website URL: $S3_URL"
+          echo "s3_url=$S3_URL" >> $GITHUB_OUTPUT
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Gateway URL:** ${{ steps.api_url.outputs.api_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend URL:** ${{ steps.s3_url.outputs.s3_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Security Warning" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This deployment contains intentional security vulnerabilities for educational purposes." >> $GITHUB_STEP_SUMMARY
+          echo "**DO NOT** use in production or expose to the public internet without proper safeguards." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Open the Frontend URL in your browser" >> $GITHUB_STEP_SUMMARY
+          echo "2. Enter the API Gateway URL in the configuration section" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test the vulnerable endpoints to observe security issues" >> $GITHUB_STEP_SUMMARY

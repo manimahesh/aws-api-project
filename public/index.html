@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insecure API Demo - Educational Purposes Only</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .warning-banner {
+            background: #dc3545;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning-banner h2 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .config-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .endpoint-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .endpoint-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .method-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .method-get { background: #28a745; color: white; }
+        .method-post { background: #007bff; color: white; }
+        .method-put { background: #ffc107; color: black; }
+
+        .vulnerability-tag {
+            background: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .endpoint-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .endpoint-card input,
+        .endpoint-card textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .endpoint-card textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .response-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .response-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        #responseOutput {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .vulnerability-list {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .vulnerability-list h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .vulnerability-list ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .vulnerability-list li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="warning-banner">
+            <h2>⚠️ EDUCATIONAL PURPOSES ONLY ⚠️</h2>
+            <p>This API contains intentional security vulnerabilities. DO NOT use in production environments!</p>
+        </div>
+
+        <div class="header">
+            <h1>Insecure API Demonstration</h1>
+            <p>This application demonstrates common API security vulnerabilities for educational purposes. Each endpoint below showcases a different security pitfall that developers should avoid in production applications.</p>
+        </div>
+
+        <div class="config-section">
+            <h3>API Configuration</h3>
+            <div class="input-group">
+                <label for="apiEndpoint">API Endpoint URL:</label>
+                <input type="text" id="apiEndpoint" placeholder="https://your-api-gateway-url.amazonaws.com/dev" value="">
+            </div>
+        </div>
+
+        <div class="vulnerability-list">
+            <h3>Vulnerabilities Demonstrated:</h3>
+            <ul>
+                <li><strong>SQL Injection:</strong> User input directly incorporated into queries</li>
+                <li><strong>Missing Authentication:</strong> No auth required for sensitive operations</li>
+                <li><strong>Sensitive Data Exposure:</strong> Passwords and PII returned in responses</li>
+                <li><strong>Mass Assignment:</strong> Users can set their own admin privileges</li>
+                <li><strong>Broken Access Control:</strong> Users can modify other users' data</li>
+                <li><strong>IDOR:</strong> Direct object references without authorization checks</li>
+            </ul>
+        </div>
+
+        <div class="endpoints-grid">
+            <!-- Endpoint 1: List Users -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-get">GET</span>
+                    List Users
+                    <span class="vulnerability-tag">NO AUTH</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> Returns all users with sensitive data (passwords, SSN, credit cards) without any authentication.
+                </p>
+                <button class="btn" onclick="listUsers()">Execute Request</button>
+            </div>
+
+            <!-- Endpoint 2: Create User -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-post">POST</span>
+                    Create User
+                    <span class="vulnerability-tag">MASS ASSIGN</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> Mass assignment allows setting isAdmin=true. Try it!
+                </p>
+                <textarea id="createUserBody" placeholder='{"username":"hacker","password":"test123","email":"hacker@test.com","isAdmin":true}'>{
+  "username": "hacker",
+  "password": "test123",
+  "email": "hacker@test.com",
+  "isAdmin": true
+}</textarea>
+                <button class="btn" onclick="createUser()">Execute Request</button>
+            </div>
+
+            <!-- Endpoint 3: Get User By ID -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-get">GET</span>
+                    Get User by ID
+                    <span class="vulnerability-tag">IDOR</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> Access any user's data without authorization. Try user IDs: 1, 2, 3
+                </p>
+                <input type="text" id="getUserId" placeholder="User ID (e.g., 1)" value="1">
+                <button class="btn" onclick="getUserById()">Execute Request</button>
+            </div>
+
+            <!-- Endpoint 4: Update User -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-put">PUT</span>
+                    Update User
+                    <span class="vulnerability-tag">NO AUTHZ</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> Update any user's data, including making yourself admin!
+                </p>
+                <input type="text" id="updateUserId" placeholder="User ID (e.g., 2)" value="2">
+                <textarea id="updateUserBody" placeholder='{"isAdmin":true}'>{
+  "isAdmin": true,
+  "password": "hacked123"
+}</textarea>
+                <button class="btn" onclick="updateUser()">Execute Request</button>
+            </div>
+
+            <!-- Endpoint 5: Search Users -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-get">GET</span>
+                    Search Users
+                    <span class="vulnerability-tag">SQL INJECT</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> SQL Injection. Try: admin' OR '1'='1
+                </p>
+                <input type="text" id="searchQuery" placeholder="Search query (try: admin' OR '1'='1)" value="">
+                <button class="btn" onclick="searchUsers()">Execute Request</button>
+            </div>
+
+            <!-- Endpoint 6: Get Config -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-get">GET</span>
+                    Get Config
+                    <span class="vulnerability-tag">INFO LEAK</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> Exposes database credentials, API keys, and secrets without authentication!
+                </p>
+                <button class="btn" onclick="getConfig()">Execute Request</button>
+            </div>
+
+            <!-- Endpoint 7: Export Data -->
+            <div class="endpoint-card">
+                <h3>
+                    <span class="method-badge method-post">POST</span>
+                    Export Data
+                    <span class="vulnerability-tag">NO LIMIT</span>
+                </h3>
+                <p class="endpoint-description">
+                    <strong>Vulnerability:</strong> Mass data export without rate limiting or authorization.
+                </p>
+                <select id="exportFormat" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                    <option value="xml">XML</option>
+                </select>
+                <button class="btn" onclick="exportData()">Execute Request</button>
+            </div>
+        </div>
+
+        <div class="response-section">
+            <h3>Response Output</h3>
+            <div id="responseOutput">Click any endpoint button above to see the response...</div>
+        </div>
+    </div>
+
+    <script>
+        function getApiUrl() {
+            const url = document.getElementById('apiEndpoint').value.trim();
+            if (!url) {
+                alert('Please enter your API Gateway URL first!');
+                return null;
+            }
+            return url.replace(/\/$/, ''); // Remove trailing slash
+        }
+
+        function displayResponse(response, status, url, method) {
+            const output = document.getElementById('responseOutput');
+            const timestamp = new Date().toISOString();
+
+            const displayData = {
+                timestamp: timestamp,
+                request: {
+                    method: method,
+                    url: url
+                },
+                status: status,
+                response: response
+            };
+
+            output.textContent = JSON.stringify(displayData, null, 2);
+        }
+
+        function displayError(error, url, method) {
+            const output = document.getElementById('responseOutput');
+            const timestamp = new Date().toISOString();
+
+            const displayData = {
+                timestamp: timestamp,
+                request: {
+                    method: method,
+                    url: url
+                },
+                error: error.toString()
+            };
+
+            output.textContent = JSON.stringify(displayData, null, 2);
+        }
+
+        async function listUsers() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const url = `${baseUrl}/users`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'GET');
+            } catch (error) {
+                displayError(error, url, 'GET');
+            }
+        }
+
+        async function createUser() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const url = `${baseUrl}/users`;
+            const body = document.getElementById('createUserBody').value;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: body
+                });
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'POST');
+            } catch (error) {
+                displayError(error, url, 'POST');
+            }
+        }
+
+        async function getUserById() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const userId = document.getElementById('getUserId').value;
+            const url = `${baseUrl}/users/${userId}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'GET');
+            } catch (error) {
+                displayError(error, url, 'GET');
+            }
+        }
+
+        async function updateUser() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const userId = document.getElementById('updateUserId').value;
+            const url = `${baseUrl}/users/${userId}`;
+            const body = document.getElementById('updateUserBody').value;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: body
+                });
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'PUT');
+            } catch (error) {
+                displayError(error, url, 'PUT');
+            }
+        }
+
+        async function searchUsers() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const query = document.getElementById('searchQuery').value;
+            const url = `${baseUrl}/search?query=${encodeURIComponent(query)}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'GET');
+            } catch (error) {
+                displayError(error, url, 'GET');
+            }
+        }
+
+        async function getConfig() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const url = `${baseUrl}/admin/config`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'GET');
+            } catch (error) {
+                displayError(error, url, 'GET');
+            }
+        }
+
+        async function exportData() {
+            const baseUrl = getApiUrl();
+            if (!baseUrl) return;
+
+            const format = document.getElementById('exportFormat').value;
+            const url = `${baseUrl}/data/export`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ format: format })
+                });
+                const data = await response.json();
+                displayResponse(data, response.status, url, 'POST');
+            } catch (error) {
+                displayError(error, url, 'POST');
+            }
+        }
+    </script>
+</body>
+</html>

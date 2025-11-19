@@ -1,0 +1,196 @@
+openapi: 3.0.0
+info:
+  title: Insecure API Demo - Educational Purposes Only
+  version: 1.0.0
+  description: |
+    WARNING: This API contains intentional security vulnerabilities for educational purposes.
+    DO NOT use in production. Demonstrates common API security pitfalls.
+
+    Vulnerabilities demonstrated:
+    1. SQL Injection
+    2. Missing authentication/authorization
+    3. Sensitive data exposure
+    4. Mass assignment
+    5. Broken access control
+    6. Insecure direct object references (IDOR)
+
+servers:
+  - url: https://api.example.com/dev
+    description: Development server
+
+paths:
+  /users:
+    get:
+      summary: List all users (No authentication required - VULNERABILITY)
+      description: Returns all users including sensitive data like passwords
+      operationId: listUsers
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+    post:
+      summary: Create new user (Mass assignment vulnerability)
+      description: Creates a user allowing any fields to be set including isAdmin
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                email:
+                  type: string
+                isAdmin:
+                  type: boolean
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/{userId}:
+    get:
+      summary: Get user by ID (IDOR vulnerability)
+      description: No authorization check - any user can view any other user's data
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      summary: Update user (Broken access control)
+      description: Any user can update any other user's data including admin status
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /search:
+    get:
+      summary: Search users (SQL Injection vulnerability)
+      description: Direct SQL query construction from user input
+      operationId: searchUsers
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query (vulnerable to SQL injection)
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /admin/config:
+    get:
+      summary: Get system configuration (Information disclosure)
+      description: Exposes sensitive configuration without authentication
+      operationId: getConfig
+      responses:
+        '200':
+          description: Configuration data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  databaseUrl:
+                    type: string
+                  apiKeys:
+                    type: object
+                  secrets:
+                    type: object
+
+  /data/export:
+    post:
+      summary: Export user data (No rate limiting or authorization)
+      description: Allows mass data export without proper controls
+      operationId: exportData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum: [json, csv, xml]
+      responses:
+        '200':
+          description: Exported data
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          description: Plain text password - MAJOR VULNERABILITY
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        ssn:
+          type: string
+          description: Sensitive data exposed - VULNERABILITY
+        creditCard:
+          type: string
+          description: PII exposed - VULNERABILITY
+        createdAt:
+          type: string
+          format: date-time

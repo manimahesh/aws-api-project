@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and update with your values
+
+aws_region  = "us-east-1"
+environment = "dev"
+project_name = "insecure-api-demo"
+
+# Your GitHub repository in format "username/repository"
+github_repo = "yourusername/aws-api-project"
+
+# If you already have a GitHub OIDC provider in your AWS account, set this to true
+# and provide the ARN below to avoid creating a duplicate
+use_existing_oidc_provider = false
+
+# ARN of your existing GitHub OIDC provider (only needed if use_existing_oidc_provider = true)
+# To find this, run: aws iam list-open-id-connect-providers
+# Example: "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+# existing_oidc_provider_arn = ""

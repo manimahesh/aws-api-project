@@ -1,0 +1,42 @@
+# Node modules
+node_modules/
+
+# Lambda deployment package
+lambda.zip
+terraform/lambda_placeholder.zip
+
+# Terraform files
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+*.tfvars
+!terraform.tfvars.example
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# AWS
+.aws/
+
+# Temporary files
+tmp/
+temp/
