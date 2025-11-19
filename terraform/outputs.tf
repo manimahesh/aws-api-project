@@ -56,5 +56,13 @@ output "deployment_instructions" {
       zip -r lambda.zip src/ package.json package-lock.json node_modules/
       aws lambda update-function-code --function-name ${aws_lambda_function.api_lambda.function_name} --zip-file fileb://lambda.zip
 
+    📝 API Endpoints (use in frontend):
+      Base URL: ${aws_api_gateway_stage.api.invoke_url}
+
+      Example endpoints:
+        ${aws_api_gateway_stage.api.invoke_url}/users
+        ${aws_api_gateway_stage.api.invoke_url}/search?query=admin
+        ${aws_api_gateway_stage.api.invoke_url}/admin/config
+
   EOT
 }

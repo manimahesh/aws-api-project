@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aws lambda update-function-code:*)",
+      "Bash(aws lambda update-function-configuration:*)",
+      "Bash(aws lambda wait:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

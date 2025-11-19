@@ -26,12 +26,44 @@ if (Test-Path "lambda.zip") {
     Remove-Item "lambda.zip"
 }
 
-# Use PowerShell's Compress-Archive or system zip
-if (Get-Command "Compress-Archive" -ErrorAction SilentlyContinue) {
-    Compress-Archive -Path src/, package.json, package-lock.json, node_modules/ -DestinationPath lambda.zip -Force
+# Determine what to include in package
+$itemsToZip = @("src/", "package.json")
+if (Test-Path "package-lock.json") {
+    $itemsToZip += "package-lock.json"
+}
+if (Test-Path "node_modules") {
+    $itemsToZip += "node_modules/"
+}
+
+# Try to use system zip command (from Git for Windows or 7zip)
+if (Get-Command "zip" -ErrorAction SilentlyContinue) {
+    Write-Host "Using zip command..." -ForegroundColor Gray
+    $zipArgs = $itemsToZip -join " "
+    Invoke-Expression "zip -r lambda.zip $zipArgs" 2>&1 | Out-Null
+} elseif (Get-Command "7z" -ErrorAction SilentlyContinue) {
+    Write-Host "Using 7-Zip..." -ForegroundColor Gray
+    $7zArgs = $itemsToZip -join " "
+    Invoke-Expression "7z a -tzip lambda.zip $7zArgs" 2>&1 | Out-Null
 } else {
-    Write-Host "⚠️  Using system zip command..." -ForegroundColor Yellow
-    zip -r lambda.zip src/ package.json package-lock.json node_modules/
+    Write-Host "⚠️  Using PowerShell Compress-Archive (slower)..." -ForegroundColor Yellow
+    # Create temp directory and copy files
+    $tempDir = "temp_lambda_package"
+    if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
+    New-Item -ItemType Directory -Path $tempDir | Out-Null
+
+    foreach ($item in $itemsToZip) {
+        $source = $item.TrimEnd('/')
+        if (Test-Path $source) {
+            if (Test-Path $source -PathType Container) {
+                Copy-Item -Recurse $source "$tempDir/$source"
+            } else {
+                Copy-Item $source "$tempDir/"
+            }
+        }
+    }
+
+    Compress-Archive -Path "$tempDir/*" -DestinationPath lambda.zip -Force
+    Remove-Item -Recurse -Force $tempDir
 }
 
 $zipSize = (Get-Item "lambda.zip").Length / 1MB
