@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
   NODE_VERSION: '20.x'
 
 permissions:
@@ -32,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd ${{ github.workspace }}
-          npm ci --production
+          npm install --omit=dev
 
       - name: Package Lambda function
         run: |
@@ -44,7 +43,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
           role-session-name: GitHubActions-${{ github.run_id }}
 
       - name: Verify AWS credentials
@@ -55,30 +54,32 @@ jobs:
       - name: Update Lambda function code
         run: |
           FUNCTION_NAME="${{ secrets.LAMBDA_FUNCTION_NAME }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
 
           echo "Updating Lambda function: $FUNCTION_NAME"
 
           aws lambda update-function-code \
             --function-name $FUNCTION_NAME \
             --zip-file fileb://lambda.zip \
-            --region ${{ env.AWS_REGION }}
+            --region $AWS_REGION
 
           echo "Waiting for Lambda function update to complete..."
           aws lambda wait function-updated \
             --function-name $FUNCTION_NAME \
-            --region ${{ env.AWS_REGION }}
+            --region $AWS_REGION
 
           echo "Lambda function updated successfully"
 
       - name: Deploy frontend to S3
         run: |
           S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
 
           echo "Deploying frontend to S3 bucket: $S3_BUCKET"
 
           aws s3 cp public/index.html s3://$S3_BUCKET/index.html \
             --content-type "text/html" \
-            --region ${{ env.AWS_REGION }}
+            --region $AWS_REGION
 
           echo "Frontend deployed successfully"
 
@@ -86,9 +87,13 @@ jobs:
         id: api_url
         run: |
           API_ID="${{ secrets.API_GATEWAY_ID }}"
-          STAGE_NAME="${{ secrets.STAGE_NAME || 'dev' }}"
+          STAGE_NAME="${{ secrets.STAGE_NAME }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
 
-          API_URL="https://${API_ID}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${STAGE_NAME}"
+          # Use default values if not set
+          STAGE_NAME=${STAGE_NAME:-dev}
+
+          API_URL="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com/${STAGE_NAME}"
 
           echo "API Gateway URL: $API_URL"
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
@@ -97,8 +102,9 @@ jobs:
         id: s3_url
         run: |
           S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
 
-          S3_URL="http://${S3_BUCKET}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+          S3_URL="http://${S3_BUCKET}.s3-website-${AWS_REGION}.amazonaws.com"
 
           echo "S3 Website URL: $S3_URL"
           echo "s3_url=$S3_URL" >> $GITHUB_OUTPUT

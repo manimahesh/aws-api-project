@@ -283,6 +283,7 @@ Add the following secrets to your GitHub repository (Settings → Secrets and va
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
 | `AWS_ROLE_ARN` | IAM role ARN from Terraform output | `arn:aws:iam::123456789012:role/...` |
+| `AWS_REGION` | AWS region from Terraform output | `us-east-1` |
 | `LAMBDA_FUNCTION_NAME` | Lambda function name | `insecure-api-demo-dev` |
 | `S3_BUCKET_NAME` | S3 bucket name | `insecure-api-demo-frontend-dev-...` |
 | `API_GATEWAY_ID` | API Gateway REST API ID | `abc123def4` |

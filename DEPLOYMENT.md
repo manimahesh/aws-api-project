@@ -167,6 +167,7 @@ echo "Lambda function updated successfully!"
    | Secret Name | Value | Where to find it |
    |-------------|-------|------------------|
    | `AWS_ROLE_ARN` | `arn:aws:iam::123456789012:role/...` | Terraform output: `github_actions_role_arn` |
+   | `AWS_REGION` | `us-east-1` | Terraform output: `aws_region` |
    | `LAMBDA_FUNCTION_NAME` | `insecure-api-demo-dev` | Terraform output: `lambda_function_name` |
    | `S3_BUCKET_NAME` | `insecure-api-demo-frontend-dev-...` | Terraform output: `s3_bucket_name` |
    | `API_GATEWAY_ID` | `abc123def` | Terraform output: `api_gateway_id` |

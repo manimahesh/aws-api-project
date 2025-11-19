@@ -85,6 +85,7 @@ Add these secrets using the values from Terraform output:
 | Secret Name | Source |
 |-------------|--------|
 | `AWS_ROLE_ARN` | `github_actions_role_arn` output |
+| `AWS_REGION` | `aws_region` output |
 | `LAMBDA_FUNCTION_NAME` | `lambda_function_name` output |
 | `S3_BUCKET_NAME` | `s3_bucket_name` output |
 | `API_GATEWAY_ID` | `api_gateway_id` output |
