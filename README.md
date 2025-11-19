@@ -6,11 +6,19 @@
 
 This project demonstrates common API security vulnerabilities that developers should avoid. It's designed for cybersecurity education, security training, and demonstrating the importance of secure API development practices.
 
+**Technology Stack:**
+- 🚀 **AWS API Gateway HTTP API** (v2) - Fast, low-cost serverless API
+- ⚡ **AWS Lambda** (Node.js 20.x) - Serverless compute
+- 🌐 **S3 Static Website** - Frontend hosting
+- 🔧 **Terraform** - Infrastructure as Code
+- 🤖 **GitHub Actions** - CI/CD with OIDC
+
 ## Quick Links
 
 - 🚀 [Quick Start Guide](QUICK-START.md) - Get running in 5 minutes
 - 📖 [Detailed Deployment Guide](DEPLOYMENT.md) - Step-by-step instructions
 - 🔐 [OIDC Configuration](docs/OIDC-CONFIGURATION.md) - GitHub OIDC setup help
+- 📡 [HTTP API Migration](docs/HTTP-API-MIGRATION.md) - Why we use HTTP API instead of REST
 
 ## Security Vulnerabilities Demonstrated
 

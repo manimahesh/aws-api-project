@@ -89,214 +89,50 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
   retention_in_days = 7
 }
 
-# API Gateway REST API
-resource "aws_api_gateway_rest_api" "api" {
-  name        = "${var.project_name}-${var.environment}"
-  description = "Insecure API Demo - Educational Purposes Only"
+# API Gateway HTTP API (v2)
+resource "aws_apigatewayv2_api" "api" {
+  name          = "${var.project_name}-${var.environment}"
+  description   = "Insecure API Demo - Educational Purposes Only"
+  protocol_type = "HTTP"
 
-  endpoint_configuration {
-    types = ["REGIONAL"]
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["*"]
+    allow_headers = ["*"]
   }
 }
 
-# API Gateway Resources
-resource "aws_api_gateway_resource" "users" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "users"
+# Lambda Integration for HTTP API
+resource "aws_apigatewayv2_integration" "lambda" {
+  api_id = aws_apigatewayv2_api.api.id
+
+  integration_uri    = aws_lambda_function.api_lambda.invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  payload_format_version = "2.0"
 }
 
-resource "aws_api_gateway_resource" "user_id" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_resource.users.id
-  path_part   = "{userId}"
+# Catch-all route - forwards ALL requests to Lambda
+resource "aws_apigatewayv2_route" "catch_all" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "$default"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
-resource "aws_api_gateway_resource" "search" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "search"
-}
-
-resource "aws_api_gateway_resource" "admin" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "admin"
-}
-
-resource "aws_api_gateway_resource" "config" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_resource.admin.id
-  path_part   = "config"
-}
-
-resource "aws_api_gateway_resource" "data" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "data"
-}
-
-resource "aws_api_gateway_resource" "export" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_resource.data.id
-  path_part   = "export"
-}
-
-# API Gateway Methods and Integrations
-
-# GET /users
-module "users_get" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.users.id
-  http_method   = "GET"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# POST /users
-module "users_post" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.users.id
-  http_method   = "POST"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# GET /users/{userId}
-module "user_id_get" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.user_id.id
-  http_method   = "GET"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# PUT /users/{userId}
-module "user_id_put" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.user_id.id
-  http_method   = "PUT"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# GET /search
-module "search_get" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.search.id
-  http_method   = "GET"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# GET /admin/config
-module "config_get" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.config.id
-  http_method   = "GET"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# POST /data/export
-module "export_post" {
-  source = "./modules/api_method"
-
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.export.id
-  http_method   = "POST"
-  lambda_uri    = aws_lambda_function.api_lambda.invoke_arn
-}
-
-# CORS - OPTIONS methods for all resources
-module "users_options" {
-  source = "./modules/api_cors"
-
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.users.id
-}
-
-module "user_id_options" {
-  source = "./modules/api_cors"
-
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.user_id.id
-}
-
-module "search_options" {
-  source = "./modules/api_cors"
-
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.search.id
-}
-
-module "config_options" {
-  source = "./modules/api_cors"
-
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.config.id
-}
-
-module "export_options" {
-  source = "./modules/api_cors"
-
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.export.id
-}
-
-# API Gateway Deployment
-resource "aws_api_gateway_deployment" "api" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-
-  triggers = {
-    redeployment = sha1(jsonencode([
-      module.users_get,
-      module.users_post,
-      module.user_id_get,
-      module.user_id_put,
-      module.search_get,
-      module.config_get,
-      module.export_post,
-    ]))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [
-    module.users_get,
-    module.users_post,
-    module.user_id_get,
-    module.user_id_put,
-    module.search_get,
-    module.config_get,
-    module.export_post,
-  ]
-}
-
-# API Gateway Stage
-resource "aws_api_gateway_stage" "api" {
-  deployment_id = aws_api_gateway_deployment.api.id
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = var.environment
+# Stage
+resource "aws_apigatewayv2_stage" "api" {
+  api_id      = aws_apigatewayv2_api.api.id
+  name        = var.environment
+  auto_deploy = true
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
     format = jsonencode({
       requestId      = "$context.requestId"
       ip             = "$context.identity.sourceIp"
-      caller         = "$context.identity.caller"
-      user           = "$context.identity.user"
       requestTime    = "$context.requestTime"
       httpMethod     = "$context.httpMethod"
-      resourcePath   = "$context.resourcePath"
+      routeKey       = "$context.routeKey"
       status         = "$context.status"
       protocol       = "$context.protocol"
       responseLength = "$context.responseLength"
@@ -310,13 +146,13 @@ resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   retention_in_days = 7
 }
 
-# Lambda Permission for API Gateway
+# Lambda Permission for HTTP API Gateway
 resource "aws_lambda_permission" "api_gateway" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_lambda.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/*"
 }
 
 # S3 Bucket for hosting the HTML frontend

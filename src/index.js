@@ -70,12 +70,22 @@ const corsHeaders = {
 
 /**
  * Main Lambda handler
+ * Supports both API Gateway v1 (REST API) and v2 (HTTP API) payload formats
  */
 exports.handler = async (event) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
 
+  // Detect payload format version and normalize event
+  const isV2 = event.version === '2.0' || event.requestContext?.http;
+
+  // Normalize event structure for v2 format
+  const path = isV2 ? event.rawPath : event.path;
+  const method = isV2 ? event.requestContext.http.method : event.httpMethod;
+  const queryStringParameters = isV2 ? event.queryStringParameters : event.queryStringParameters;
+  const body = event.body;
+
   // Handle CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
+  if (method === 'OPTIONS') {
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -84,24 +94,29 @@ exports.handler = async (event) => {
   }
 
   try {
-    const path = event.path;
-    const method = event.httpMethod;
+    // Create normalized event object for handlers
+    const normalizedEvent = {
+      path,
+      httpMethod: method,
+      queryStringParameters,
+      body
+    };
 
     // Route to appropriate handler
     if (path === '/users' && method === 'GET') {
-      return await listUsers(event);
+      return await listUsers(normalizedEvent);
     } else if (path === '/users' && method === 'POST') {
-      return await createUser(event);
+      return await createUser(normalizedEvent);
     } else if (path.match(/^\/users\/[^/]+$/) && method === 'GET') {
-      return await getUserById(event);
+      return await getUserById(normalizedEvent);
     } else if (path.match(/^\/users\/[^/]+$/) && method === 'PUT') {
-      return await updateUser(event);
+      return await updateUser(normalizedEvent);
     } else if (path === '/search' && method === 'GET') {
-      return await searchUsers(event);
+      return await searchUsers(normalizedEvent);
     } else if (path === '/admin/config' && method === 'GET') {
-      return await getConfig(event);
+      return await getConfig(normalizedEvent);
     } else if (path === '/data/export' && method === 'POST') {
-      return await exportData(event);
+      return await exportData(normalizedEvent);
     } else {
       return response(404, { error: 'Not found' });
     }

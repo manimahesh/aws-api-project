@@ -61,6 +61,10 @@ resource "aws_iam_role" "github_actions" {
   tags = {
     Name = "GitHub Actions Deployment Role"
   }
+
+  depends_on = [
+    aws_iam_openid_connect_provider.github
+  ]
 }
 
 # IAM Policy for GitHub Actions
@@ -94,7 +98,7 @@ data "aws_iam_policy_document" "github_actions_policy" {
     ]
   }
 
-  # API Gateway permissions
+  # API Gateway permissions (HTTP API)
   statement {
     effect = "Allow"
     actions = [
@@ -104,7 +108,7 @@ data "aws_iam_policy_document" "github_actions_policy" {
       "apigateway:PATCH",
     ]
     resources = [
-      "arn:aws:apigateway:${var.aws_region}::/restapis/${aws_api_gateway_rest_api.api.id}/*",
+      "arn:aws:apigateway:${var.aws_region}::/apis/${aws_apigatewayv2_api.api.id}/*",
     ]
   }
 

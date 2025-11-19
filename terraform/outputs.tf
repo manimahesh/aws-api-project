@@ -1,6 +1,6 @@
 output "api_gateway_url" {
   description = "API Gateway endpoint URL"
-  value       = "${aws_api_gateway_stage.api.invoke_url}"
+  value       = aws_apigatewayv2_stage.api.invoke_url
 }
 
 output "lambda_function_name" {
@@ -29,8 +29,8 @@ output "github_actions_role_arn" {
 }
 
 output "api_gateway_id" {
-  description = "API Gateway REST API ID"
-  value       = aws_api_gateway_rest_api.api.id
+  description = "API Gateway HTTP API ID"
+  value       = aws_apigatewayv2_api.api.id
 }
 
 output "aws_region" {
@@ -57,12 +57,12 @@ output "deployment_instructions" {
       aws lambda update-function-code --function-name ${aws_lambda_function.api_lambda.function_name} --zip-file fileb://lambda.zip
 
     📝 API Endpoints (use in frontend):
-      Base URL: ${aws_api_gateway_stage.api.invoke_url}
+      Base URL: ${aws_apigatewayv2_stage.api.invoke_url}
 
       Example endpoints:
-        ${aws_api_gateway_stage.api.invoke_url}/users
-        ${aws_api_gateway_stage.api.invoke_url}/search?query=admin
-        ${aws_api_gateway_stage.api.invoke_url}/admin/config
+        ${aws_apigatewayv2_stage.api.invoke_url}/users
+        ${aws_apigatewayv2_stage.api.invoke_url}/search?query=admin
+        ${aws_apigatewayv2_stage.api.invoke_url}/admin/config
 
   EOT
 }
