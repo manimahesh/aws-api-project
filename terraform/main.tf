@@ -106,13 +106,56 @@ resource "aws_apigatewayv2_api" "api" {
 resource "aws_apigatewayv2_integration" "lambda" {
   api_id = aws_apigatewayv2_api.api.id
 
-  integration_uri    = aws_lambda_function.api_lambda.invoke_arn
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
+  integration_uri        = aws_lambda_function.api_lambda.invoke_arn
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
   payload_format_version = "2.0"
 }
 
-# Catch-all route - forwards ALL requests to Lambda
+# Explicit Routes for all endpoints
+resource "aws_apigatewayv2_route" "users_get" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "GET /users"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "users_post" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "POST /users"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "users_id_get" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "GET /users/{userId}"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "users_id_put" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "PUT /users/{userId}"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "search_get" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "GET /search"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "admin_config_get" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "GET /admin/config"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "data_export_post" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "POST /data/export"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+# Catch-all route for any other requests (404 handler)
 resource "aws_apigatewayv2_route" "catch_all" {
   api_id    = aws_apigatewayv2_api.api.id
   route_key = "$default"
