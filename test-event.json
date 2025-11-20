@@ -1,0 +1,10 @@
+{
+  "version": "2.0",
+  "rawPath": "/users",
+  "requestContext": {
+    "http": {
+      "method": "GET"
+    }
+  },
+  "queryStringParameters": null
+}

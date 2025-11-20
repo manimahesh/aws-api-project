@@ -79,10 +79,18 @@ exports.handler = async (event) => {
   const isV2 = event.version === '2.0' || event.requestContext?.http;
 
   // Normalize event structure for v2 format
-  const path = isV2 ? event.rawPath : event.path;
+  let path = isV2 ? event.rawPath : event.path;
   const method = isV2 ? event.requestContext.http.method : event.httpMethod;
   const queryStringParameters = isV2 ? event.queryStringParameters : event.queryStringParameters;
   const body = event.body;
+
+  // Strip stage name from path if present (e.g., /dev/users -> /users)
+  if (isV2 && event.requestContext?.stage) {
+    const stage = event.requestContext.stage;
+    if (path.startsWith(`/${stage}/`)) {
+      path = path.substring(stage.length + 1);
+    }
+  }
 
   // Handle CORS preflight
   if (method === 'OPTIONS') {
